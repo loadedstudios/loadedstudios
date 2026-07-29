@@ -49,6 +49,10 @@ SITES = {
         "login_button_selector": "button[type=submit]",  # <-- update
         "statements_url": "https://statements.prsformusic.com/#/",
         "download_link_selector": "a.statement-card__actions-download",
+        # Clicking download_link_selector opens a popup listing every file
+        # (PDF, CSV, CTL) for that statement; each has its own download button.
+        "modal_file_button_selector": "div.modal-main a > button",
+        "modal_close_selector": "body > div.ReactModalPortal > div > div > a > svg > circle",
     },
     "ditto": {
         "login_url": "https://my.dittomusic.com/login",  # <-- confirm
@@ -87,18 +91,37 @@ def pull_statements(site_key: str):
         page.goto(config["statements_url"])
         page.wait_for_load_state("networkidle")
 
-        # Download whatever matches the selector
         links = page.locator(config["download_link_selector"])
         count = links.count()
-        print(f"Found {count} document(s) to download.")
+        print(f"Found {count} statement(s).")
 
         for i in range(count):
-            with page.expect_download() as download_info:
+            if "modal_file_button_selector" in config:
+                # This site opens a popup with one download button per file
+                # (PDF, CSV, CTL, ...) instead of downloading directly.
                 links.nth(i).click()
-            download = download_info.value
-            dest = out_dir / download.suggested_filename
-            download.save_as(dest)
-            print(f"Saved: {dest}")
+                file_buttons = page.locator(config["modal_file_button_selector"])
+                file_buttons.first.wait_for()
+                file_count = file_buttons.count()
+                print(f"  Statement {i + 1}: {file_count} file(s) to download.")
+
+                for j in range(file_count):
+                    with page.expect_download() as download_info:
+                        file_buttons.nth(j).click()
+                    download = download_info.value
+                    dest = out_dir / download.suggested_filename
+                    download.save_as(dest)
+                    print(f"  Saved: {dest}")
+
+                page.locator(config["modal_close_selector"]).click()
+                page.locator(config["modal_file_button_selector"]).wait_for(state="detached")
+            else:
+                with page.expect_download() as download_info:
+                    links.nth(i).click()
+                download = download_info.value
+                dest = out_dir / download.suggested_filename
+                download.save_as(dest)
+                print(f"Saved: {dest}")
 
         browser.close()
 
