@@ -47,8 +47,8 @@ SITES = {
         "username_selector": "input#username",       # <-- update
         "password_selector": "input#password",        # <-- update
         "login_button_selector": "button[type=submit]",  # <-- update
-        "statements_url": "https://www.prsformusic.com/member/statements",  # <-- update
-        "download_link_selector": "a.statement-download",  # <-- update
+        "statements_url": "https://statements.prsformusic.com/#/",
+        "download_link_selector": "a.statement-card__actions-download",
     },
     "ditto": {
         "login_url": "https://my.dittomusic.com/login",  # <-- confirm
